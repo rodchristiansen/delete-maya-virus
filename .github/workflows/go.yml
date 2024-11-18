@@ -1,9 +1,11 @@
-name: Build Windows Binary
+name: Build and Release Windows Binary
 
 on:
   push:
     branches:
       - main
+    tags:
+      - 'v????.??.??'
   pull_request:
     branches:
       - main
@@ -19,7 +21,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"  # Enclosed in quotes
+          go-version: "1.20"
 
       - name: Install dependencies
         run: go mod tidy
@@ -35,3 +37,39 @@ jobs:
         with:
           name: delete-maya-virus-windows
           path: delete-maya-virus.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: delete-maya-virus-windows
+          path: ./build-artifacts
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build-artifacts/delete-maya-virus.exe
+          asset_name: delete-maya-virus.exe
+          asset_content_type: application/octet-stream
