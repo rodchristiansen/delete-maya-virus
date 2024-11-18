@@ -1,18 +1,37 @@
-name: Tests
+name: Build Windows Binary
 
-on: [ push, pull_request ]
-
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.15
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"  # Enclosed in quotes
 
-    - name: Test
-      run: go test -v ./...
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Build Windows Binary
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o delete-maya-virus.exe
+        env:
+          CGO_ENABLED: 0
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: delete-maya-virus-windows
+          path: delete-maya-virus.exe
