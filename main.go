@@ -12,19 +12,12 @@ import (
 	"github.com/delete-maya-virus/utils"
 )
 
-func pressAnyKey() {
-	fmt.Print("Press 'Enter' to continue...")
-	bufio.NewReader(os.Stdin).ReadBytes('\n')
-}
-
 func main() {
 	recursive := flag.Bool("r", false, "recursive path traversal")
 	createBackup := flag.Bool("b", false, "make a backup copy of processed files")
 
 	flag.Parse()
 	argPath := flag.Arg(0)
-
-	defer pressAnyKey()
 
 	if argPath == "" {
 		currentDir, err := os.Getwd()
