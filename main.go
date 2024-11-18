@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -61,9 +59,12 @@ func main() {
 	for _, pathToMayaScannedFile := range scannedMayaFiles {
 		mayaFileName := filepath.Base(pathToMayaScannedFile)
 		backupPath := pathToMayaScannedFile + ".backup"
+
+		// Attempt to read the .ma file
 		mayaFileData, err := ioutil.ReadFile(pathToMayaScannedFile)
 		if err != nil {
-			log.Fatal("Can`t open maya file! -", mayaFileName, err.Error())
+			log.Printf("WARNING: Can't open maya file '%s': %s. Skipping to next file.", mayaFileName, err.Error())
+			continue // Skip to the next file
 		}
 		log.Println("Checking the file -", mayaFileName)
 
@@ -75,7 +76,8 @@ func main() {
 			if *createBackup {
 				err := utils.CreateBuckup(backupPath, mayaFileData)
 				if err != nil {
-					log.Fatal(err.Error())
+					log.Printf("ERROR: Failed to create backup for '%s': %s. Skipping to next file.", mayaFileName, err.Error())
+					continue // Optionally skip to next file or decide how to handle
 				}
 			}
 			mayaFileData = utils.DeleteVaccineVirus(mayaFileData)
@@ -86,15 +88,18 @@ func main() {
 			if *createBackup {
 				err := utils.CreateBuckup(backupPath, mayaFileData)
 				if err != nil {
-					log.Fatal(err.Error())
+					log.Printf("ERROR: Failed to create backup for '%s': %s. Skipping to next file.", mayaFileName, err.Error())
+					continue // Optionally skip to next file or decide how to handle
 				}
 			}
 			mayaFileData = utils.DeleteMayaMelVirus(mayaFileData)
 		}
 
+		// Attempt to write the modified .ma file
 		writeErr := ioutil.WriteFile(pathToMayaScannedFile, mayaFileData, utils.FilePermission)
 		if writeErr != nil {
-			log.Fatal(writeErr.Error())
+			log.Printf("ERROR: Failed to write to '%s': %s. Skipping to next file.", mayaFileName, writeErr.Error())
+			continue // Skip to the next file
 		}
 	}
 	log.Println("All files are checked.")
