@@ -23,6 +23,16 @@ jobs:
         with:
           go-version: "1.20"
 
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            # Adjust the path if go.sum is not in the root
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Install dependencies
         run: go mod tidy
 
@@ -33,7 +43,7 @@ jobs:
           CGO_ENABLED: 0
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Updated to v4
         with:
           name: delete-maya-virus-windows
           path: delete-maya-virus.exe
@@ -48,28 +58,14 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download Build Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: delete-maya-virus-windows
           path: ./build-artifacts
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release and Upload Asset
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build-artifacts/delete-maya-virus.exe
-          asset_name: delete-maya-virus.exe
-          asset_content_type: application/octet-stream
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: ./build-artifacts/delete-maya-virus.exe
